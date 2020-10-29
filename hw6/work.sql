@@ -84,19 +84,29 @@ GROUP BY
 
 -- 4. Подсчитать общее количество лайков десяти самым молодым пользователям (сколько лайков получили 10 самых молодых пользователей).
 SELECT 
-	SUM(count_likes) all_young_likes
+	SUM(v.counts) as all_young_likes
 FROM
-	(	SELECT 
-			(SELECT birthday FROM profiles p WHERE p.user_id=l.user_id) as birthday,
-			COUNT(*) as count_likes
-		FROM 
-			likes l
-		GROUP BY
-			birthday
-		ORDER BY
-			birthday DESC
-		LIMIT 10
-	) as t;
+	(	SELECT
+			(	SELECT 
+					COUNT(*)
+				FROM
+					likes
+				WHERE
+					usrs.id=user_id
+			) as counts
+		FROM
+			( 	SELECT 
+					user_id as id,
+					birthday
+				FROM 
+					profiles p 
+				ORDER BY
+					birthday DESC
+				LIMIT 10
+			) as usrs
+	) as v;
+
+
 
 -- 5. Найти 10 пользователей, которые проявляют наименьшую активность в использовании социальной сети
 -- (критерии активности необходимо определить самостоятельно).
@@ -115,12 +125,10 @@ FROM
 			COUNT(*) as count_mess 
 		FROM 
 			messages m 
-		WHERE 
-			m.from_user_id 
 		GROUP BY 
 			m.from_user_id 
 		ORDER BY 
-			count_mess DESC 
+			count_mess 
 		LIMIT 10
 	) as m_a;
 
