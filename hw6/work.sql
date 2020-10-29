@@ -1,208 +1,128 @@
 -- --------------------------------------------------------------------------------------
--- Практическое задание по теме «Операторы, фильтрация, сортировка и ограничение»
+-- Практическое задание к Уроку 6
 -- --------------------------------------------------------------------------------------
 
+-- 1. Создать и заполнить таблицы лайков и постов.
+-- Таблица лайков
+DROP TABLE IF EXISTS likes;
+CREATE TABLE likes (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  target_id BIGINT UNSIGNED NOT NULL,
+  target_type_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
--- 1. Пусть в таблице users поля created_at и updated_at оказались незаполненными. 
--- Заполните их текущими датой и временем.
+-- Таблица типов лайков
+DROP TABLE IF EXISTS target_types;
+CREATE TABLE target_types (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL UNIQUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
--- Удалим таблицу если существует
-DROP TABLE IF EXISTS users;  
+INSERT INTO 
+	target_types (name) 
+VALUES 
+  ('messages'),
+  ('users'),
+  ('media'),
+  ('posts');
 
--- Создадим новую таблицу пользователей
-CREATE TABLE users ( 
-	id BIGINT UNSIGNED NOT NULL COMMENT "Идентификатор строки",
-	name VARCHAR(20) NOT NULL COMMENT "Имя пользователя",
-	birthday_at DATE COMMENT "День рождения пользователя",
-	created_at VARCHAR(30) COMMENT "Время создания строки",
-	updated_at VARCHAR(30) COMMENT "Время обновления строки"
-)
-COLLATE='utf8_unicode_ci'
-ENGINE=InnoDB 
-COMMENT "Пользователи";
+-- Заполняем лайки
+INSERT INTO likes 
+  SELECT 
+    id, 
+    FLOOR(1 + (RAND() * 100)), 
+    FLOOR(1 + (RAND() * 100)),
+    FLOOR(1 + (RAND() * 4)),
+    CURRENT_TIMESTAMP 
+  FROM messages;
 
--- Добавим свойства для ключа
-ALTER TABLE users
-	ADD PRIMARY KEY (id),
-	MODIFY id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
-
--- Добавим несколько записей в таблицу пользователей
-INSERT INTO users (name, birthday_at) VALUES('John', '2012-10-23');
-INSERT INTO users (name, birthday_at) VALUES('Dave', '2001-08-10');
-INSERT INTO users (name, birthday_at) VALUES('Dora', '1977-02-08');
-
--- Заполним данными created_at и updated_at
-UPDATE 
-	users 
-SET 
-	created_at=DATE_FORMAT(NOW(), '%d-%m-%Y %h:%i'), 
-	updated_at=DATE_FORMAT(NOW(), '%d-%m-%Y %h:%i');
+-- Создадим таблицу постов
+DROP TABLE IF EXISTS posts;
+CREATE TABLE posts (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  community_id BIGINT UNSIGNED,
+  head VARCHAR(255),
+  body TEXT NOT NULL,
+  media_id BIGINT UNSIGNED,
+  is_public BOOLEAN DEFAULT TRUE,
+  is_archived BOOLEAN DEFAULT FALSE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
 
--- 2. Таблица users была неудачно спроектирована. 
--- Записи created_at и updated_at были заданы типом VARCHAR и в них долгое время помещались значения в формате 20.10.2017 8:10. 
--- Необходимо преобразовать поля к типу DATETIME, сохранив введённые ранее значения.
+-- 2. Создать все необходимые внешние ключи и диаграмму отношений.
+ALTER TABLE likes
+  	ADD CONSTRAINT likes_user_id_fk 
+  		FOREIGN KEY (user_id) REFERENCES users(id),
+  	ADD CONSTRAINT likes_target_type_id_fk 
+  		FOREIGN KEY (target_type_id) REFERENCES target_types(id);
+  	
+  	
+ALTER TABLE posts
+  	ADD CONSTRAINT posts_user_id_fk 
+  		FOREIGN KEY (user_id) REFERENCES users(id),
+  	ADD CONSTRAINT posts_community_id_fk 
+  		FOREIGN KEY (community_id) REFERENCES communities(id),
+  	ADD CONSTRAINT posts_media_id_fk 
+  		FOREIGN KEY (media_id) REFERENCES media(id);
+-- Диаграмму прикладывал к 3 уроку
 
--- Обновим дату на корректное значение 
-UPDATE 
-	users 
-SET 
-	created_at=STR_TO_DATE(created_at, '%d-%m-%Y %h:%i'), 
-	updated_at=STR_TO_DATE(updated_at, '%d-%m-%Y %h:%i');
-
--- Откорректируем тип колонок на правильное
-ALTER TABLE users
-	CHANGE created_at created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT "Время создания строки",
-	CHANGE updated_at updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT "Время обновления строки";
-	
-
--- 3. В таблице складских запасов storehouses_products в поле value могут встречаться самые разные цифры: 0, 
--- если товар закончился и выше нуля, если на складе имеются запасы. 
--- Необходимо отсортировать записи таким образом, чтобы они выводились в порядке увеличения значения value. 
--- Однако нулевые запасы должны выводиться в конце, после всех записей.
-
--- Создадим подопытную таблицу
- CREATE TABLE storehouses_products ( 
-	id BIGINT UNSIGNED NOT NULL COMMENT "Идентификатор строки",
-	value INT COMMENT "Количество товаров на сайте",
-	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT "Время создания строки",
-	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT "Время обновления строки"
-)
-COLLATE='utf8_unicode_ci'
-ENGINE=InnoDB 
-COMMENT "Складские запасы";
-
--- Добавим свойства для ключа
-ALTER TABLE storehouses_products
-	ADD PRIMARY KEY (id),
-	MODIFY id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
-
--- Добавим несколько записей в таблицу складских запасов
-INSERT INTO storehouses_products (value) VALUES('0');
-INSERT INTO storehouses_products (value) VALUES('2500');
-INSERT INTO storehouses_products (value) VALUES('0');
-INSERT INTO storehouses_products (value) VALUES('30');
-INSERT INTO storehouses_products (value) VALUES('500');
-INSERT INTO storehouses_products (value) VALUES('1');
-
--- Сделаем выборку
+-- 3. Определить кто больше поставил лайков (всего) - мужчины или женщины?
 SELECT 
-	* 
+	(SELECT gender FROM profiles p WHERE p.user_id=l.user_id) as gender,
+	COUNT(*) as count_likes
 FROM 
-	storehouses_products
-ORDER BY
-	IF(value>0, FALSE, TRUE),
-	value;
-	
-
--- 4. (по желанию) Из таблицы users необходимо извлечь пользователей, родившихся в августе и мае. 
--- Месяцы заданы в виде списка английских названий (may, august)
-
--- Добавим еще пару записей в выборки
-INSERT INTO users (name, birthday_at) VALUES('Gregory', '2000-05-12');
-INSERT INTO users (name, birthday_at) VALUES('Dread', '2001-01-15');
-INSERT INTO users (name, birthday_at) VALUES('Justify', '1977-09-14');
-
--- Сформируем выборку по месяцам
-SELECT
-	*
-FROM
-	users
-WHERE 
-	MONTHNAME(birthday_at) IN('may', 'august');
+	likes l
+GROUP BY
+	gender;
 
 
--- 5. (по желанию) Из таблицы catalogs извлекаются записи при помощи запроса. SELECT * FROM catalogs WHERE id IN (5, 1, 2); 
--- Отсортируйте записи в порядке, заданном в списке IN.
-
--- Подготовим таблицу
- CREATE TABLE catalogs ( 
-	id BIGINT UNSIGNED NOT NULL COMMENT "Идентификатор строки",
-	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT "Время создания строки",
-	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT "Время обновления строки"
-)
-COLLATE='utf8_unicode_ci'
-ENGINE=InnoDB 
-COMMENT "Каталог";
-
--- Добавим свойства для ключа
-ALTER TABLE catalogs
-	ADD PRIMARY KEY (id),
-	MODIFY id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
-
--- Добавим несколько записей в таблицу складских запасов
-INSERT INTO catalogs VALUES();
-INSERT INTO catalogs VALUES();
-INSERT INTO catalogs VALUES();
-INSERT INTO catalogs VALUES();
-INSERT INTO catalogs VALUES();
-INSERT INTO catalogs VALUES();
-
--- Отсортируем в нужном порядке
+-- 4. Подсчитать общее количество лайков десяти самым молодым пользователям (сколько лайков получили 10 самых молодых пользователей).
 SELECT 
-	* 
-FROM 
-	catalogs 
-WHERE 
-	id IN (5, 1, 2)
-ORDER BY
-	FIELD(id, 5, 1, 2);
-
--- --------------------------------------------------------------------------------------
--- Практическое задание теме «Агрегация данных»
--- --------------------------------------------------------------------------------------
-
-
--- 1. Подсчитайте средний возраст пользователей в таблице users.
-SELECT
-	ROUND(AVG(YEAR(NOW()) - YEAR(birthday_at))) as age
+	SUM(count_likes) all_young_likes
 FROM
-	users;
+	(	SELECT 
+			(SELECT birthday FROM profiles p WHERE p.user_id=l.user_id) as birthday,
+			COUNT(*) as count_likes
+		FROM 
+			likes l
+		GROUP BY
+			birthday
+		ORDER BY
+			birthday DESC
+		LIMIT 10
+	) as t;
 
-SELECT
-	ROUND(AVG(TIMESTAMPDIFF(YEAR, birthday_at, NOW()))) as age
+-- 5. Найти 10 пользователей, которые проявляют наименьшую активность в использовании социальной сети
+-- (критерии активности необходимо определить самостоятельно).
+SELECT 
+	(	SELECT 
+			CONCAT_WS(' ', last_name, first_name)
+		FROM
+			users
+		WHERE
+			m_a.id=id
+	) as name,
+	count_mess
 FROM
-	users;
-
-
--- 2. Подсчитайте количество дней рождения, которые приходятся на каждый из дней недели. 
--- Следует учесть, что необходимы дни недели текущего года, а не года рождения.
-
--- Если дни недели выбирать в том году, в который родился
-SELECT
-	DAYNAME(birthday_at) as days,
-	COUNT(*) as count_days
-FROM
-	users
-GROUP BY
-	days;
-
--- В текущем году
-SELECT
-	DAYNAME(ADDDATE(birthday_at, INTERVAL YEAR(NOW()) - YEAR(birthday_at) YEAR)) as days,
-	COUNT(*) as count_days
-FROM
-	users
-GROUP BY
-	days;
-
--- 3. (по желанию) Подсчитайте произведение чисел в столбце таблицы.
-
--- Возьмем за основу таблицу пользователей и будем использовать id в качестве перемножения значений
-SELECT
-	EXP(SUM(LN(id)))
-FROM
-	users
-WHERE 
-	id < 6;
--- Бага, если я поставлю LIMIT 5 ( только пять значений ) расчет все равно идет по всем строкам 
-
-
-
-
-
-
-
+	(	SELECT 
+			from_user_id as id, 
+			COUNT(*) as count_mess 
+		FROM 
+			messages m 
+		WHERE 
+			m.from_user_id 
+		GROUP BY 
+			m.from_user_id 
+		ORDER BY 
+			count_mess DESC 
+		LIMIT 10
+	) as m_a;
 
 
 
