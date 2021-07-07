@@ -1,0 +1,78 @@
+1.Установите СУБД MySQL. Создайте в домашней директории файл .my.cnf, задав в нем логин и пароль, 
+который указывался при установке.
+[dobrii@sanjasa ~]$ 
+[dobrii@sanjasa ~]$ nano .my.cnf
+[dobrii@sanjasa ~]$ mysql
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 14
+Server version: 8.0.21 Source distribution
+
+Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> exit
+Bye
+[dobrii@sanjasa ~]$ cat .my.cnf
+[mysql]
+user=root
+password=.......
+[dobrii@sanjasa ~]$ 
+[dobrii@sanjasa ~]$ ls -la
+итого 192
+drwx------. 53 dobrii dobrii  4096 окт 12 10:31  .
+drwxr-xr-x.  5 root   root      42 сен 24 10:36  ..
+.....
+drwxr-xr-x.  6 dobrii dobrii    81 фев 27  2020  .mozilla
+-rw-rw-r--.  1 dobrii dobrii    38 окт 12 10:30  .my.cnf
+.....
+..................................................................................................................
+2. Создайте базу данных example, разместите в ней таблицу users, состоящую из двух столбцов, 
+числового id и строкового name.
+
+[dobrii@sanjasa /]$ mysql
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 20
+Server version: 8.0.21 Source distribution
+
+Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| calendula          |
+| information_schema |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+5 rows in set (0.00 sec)
+
+mysql> create database example;
+Query OK, 1 row affected (0.01 sec)
+
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| calendula          |
+| information_schema |
+| example            |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+6 rows in set (0.00 sec)
+
+mysql> 
